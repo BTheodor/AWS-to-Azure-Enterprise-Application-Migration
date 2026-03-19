@@ -53,6 +53,18 @@ All Azure resources are provisioned using **Terraform**, organized into a modula
 - **04-Infrastructure:** Application-specific resources (App Services, SQL, Storage).
 - **Best Practices:** Strict naming conventions, consistent tagging, and remote state management.
 
+## Repository Structure
+This repository is organized to reflect the end-to-end migration lifecycle:
+- **`01-assessment/`**: Discovery, 6Rs analysis, and migration strategy documents.
+- **`02-architecture/`**: High-level and low-level target Azure architecture designs.
+- **`03-landing-zone/`**: Terraform code for the foundational Azure network and security.
+- **`04-infrastructure/`**: Terraform code for application-specific PaaS resources (App Service, SQL, Storage).
+- **`05-migration/`**: Technical guides and playbooks for data and database migration.
+- **`06-devops/`**: Azure DevOps YAML pipelines for infrastructure and application deployment.
+- **`07-operations/`**: Monitoring, backup, and cost optimization strategies.
+- **`08-post-migration/`**: Modernization roadmap and lessons learned.
+- **`src/`**: Functional source code for the **React Frontend** and **.NET Backend API**, used to demonstrate CI/CD automation.
+
 ## CI/CD and DevOps
 The project implements robust CI/CD pipelines using **Azure DevOps YAML**:
 - **Infrastructure Pipeline:** Automated Terraform Plan/Apply with manual approval gates for Production.

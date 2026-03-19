@@ -7,7 +7,7 @@ trigger:
       - main
   paths:
     include:
-      - src/Backend/* # Assuming source code would live here
+      - src/backend/* # Source code lives here
 
 pool:
   vmImage: 'windows-latest'

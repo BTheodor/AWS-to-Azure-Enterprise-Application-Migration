@@ -1,0 +1,65 @@
+# Frontend Deployment Pipeline (React)
+# This pipeline builds and deploys the React frontend to Azure App Service (Linux).
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - src/frontend/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  azureSubscription: 'sc-azure-migration-prod'
+  webAppName: 'app-global-finance-fe-001'
+
+stages:
+  - stage: Build
+    jobs:
+      - job: BuildJob
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '18.x'
+            displayName: 'Install Node.js'
+
+          - script: |
+              cd src/frontend
+              npm install
+              npm run build
+            displayName: 'npm install and build'
+
+          - task: ArchiveFiles@2
+            inputs:
+              rootFolderOrFile: 'src/frontend/build'
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/frontend.zip'
+              replaceExistingArchive: true
+
+          - task: PublishBuildArtifact@1
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)/frontend.zip'
+              ArtifactName: 'drop'
+              publishLocation: 'Container'
+
+  - stage: Deploy_to_Production
+    dependsOn: Build
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: DeployProd
+        environment: 'Production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureRmWebAppDeployment@4
+                  inputs:
+                    ConnectionType: 'AzureRM'
+                    azureSubscription: '$(azureSubscription)'
+                    appType: 'webAppLinux'
+                    WebAppName: '$(webAppName)'
+                    Package: '$(Pipeline.Workspace)/drop/frontend.zip'
