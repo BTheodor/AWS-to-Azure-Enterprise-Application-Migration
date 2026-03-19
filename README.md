@@ -1,9 +1,7 @@
 # AWS to Azure Enterprise Application Migration – Portfolio Project
 
 ## Overview
-This repository demonstrates an end-to-end migration of a mission-critical enterprise application from AWS to Microsoft Azure, following industry best practices for cloud architecture, security, governance, and DevOps. 
-
-The project showcases architecture leadership, hands-on Azure implementation, Infrastructure as Code (IaC), and clear communication of trade-offs and risks, aligned with real-world cloud migration programs.
+This repository showcases one of six enterprise-level cloud migration projects I have worked on, involving the migration of a mission-critical application from AWS to Microsoft Azure. I applied best practices in cloud architecture, security, governance, and DevOps to ensure a smooth and secure transition. The project demonstrates my hands-on expertise with Azure services, Infrastructure as Code (IaC), and the practical management of trade-offs and risks in complex cloud migrations.
 
 ## Business Problem
 An organization is running a customer-facing "GlobalFinance Portal" on AWS with increasing operational cost, limited governance, and scalability challenges. The goal is to migrate the application to Microsoft Azure while improving:
@@ -106,4 +104,4 @@ Security is a foundational pillar of this migration:
 - **GitHub Actions** as an alternative CI/CD provider.
 
 ## Author
-**Azure Cloud Architect – AWS to Azure Migration Specialist**
+**Theodor Burcea
