@@ -3,6 +3,8 @@
 ## Overview
 This repository showcases one of six enterprise-level cloud migration projects I have worked on, involving the migration of a mission-critical application from AWS to Microsoft Azure. I applied best practices in cloud architecture, security, governance, and DevOps to ensure a smooth and secure transition. The project demonstrates my hands-on expertise with Azure services, Infrastructure as Code (IaC), and the practical management of trade-offs and risks in complex cloud migrations.
 
+> **Privacy & Confidentiality Notice:** As this project simulates a migration for a financial application ("GlobalFinance Portal"), all sensitive, private, and confidential data has been removed, anonymized, or replaced with architectural placeholders to comply with security best practices and data protection standards. No real customer data or proprietary business logic is contained within this repository.
+
 ## Business Problem
 An organization is running a customer-facing "GlobalFinance Portal" on AWS with increasing operational cost, limited governance, and scalability challenges. The goal is to migrate the application to Microsoft Azure while improving:
 - **Security and governance** (Zero Trust model)
