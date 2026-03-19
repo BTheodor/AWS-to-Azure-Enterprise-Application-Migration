@@ -1,0 +1,103 @@
+# Infrastructure CI/CD Pipeline (Terraform)
+# This pipeline automates the deployment of Azure resources across environments.
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - 03-landing-zone/terraform/*
+      - 04-infrastructure/terraform/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - name: terraformVersion
+    value: '1.5.0'
+  - name: azureServiceConnection
+    value: 'sc-azure-migration-prod'
+  - name: resourceGroupName
+    value: 'rg-terraform-state'
+  - name: storageAccountName
+    value: 'stterraformstate'
+  - name: containerName
+    value: 'tfstate'
+
+stages:
+  - stage: Terraform_Plan
+    displayName: 'Terraform Plan'
+    jobs:
+      - job: Plan
+        steps:
+          - task: TerraformInstaller@0
+            inputs:
+              terraformVersion: $(terraformVersion)
+
+          - task: TerraformTaskV4@4
+            displayName: 'Terraform Init'
+            inputs:
+              provider: 'azurerm'
+              command: 'init'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/03-landing-zone/terraform/networking'
+              backendServiceArm: $(azureServiceConnection)
+              backendAzureRmResourceGroupName: $(resourceGroupName)
+              backendAzureRmStorageAccountName: $(storageAccountName)
+              backendAzureRmContainerName: $(containerName)
+              backendAzureRmKey: 'networking.tfstate'
+
+          - task: TerraformTaskV4@4
+            displayName: 'Terraform Plan'
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              workingDirectory: '$(System.DefaultWorkingDirectory)/03-landing-zone/terraform/networking'
+              environmentServiceNameAzureRM: $(azureServiceConnection)
+              commandOptions: '-out=tfplan'
+
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: '$(System.DefaultWorkingDirectory)/03-landing-zone/terraform/networking/tfplan'
+              artifact: 'terraform-plan'
+
+  - stage: Terraform_Apply
+    displayName: 'Terraform Apply'
+    dependsOn: Terraform_Plan
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: Apply
+        environment: 'Production' # This enables Manual Approval in Azure DevOps
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: DownloadPipelineArtifact@1
+                  inputs:
+                    artifact: 'terraform-plan'
+                    path: '$(System.DefaultWorkingDirectory)/tfplan'
+
+                - task: TerraformInstaller@0
+                  inputs:
+                    terraformVersion: $(terraformVersion)
+
+                - task: TerraformTaskV4@4
+                  displayName: 'Terraform Init'
+                  inputs:
+                    provider: 'azurerm'
+                    command: 'init'
+                    workingDirectory: '$(System.DefaultWorkingDirectory)/03-landing-zone/terraform/networking'
+                    backendServiceArm: $(azureServiceConnection)
+                    backendAzureRmResourceGroupName: $(resourceGroupName)
+                    backendAzureRmStorageAccountName: $(storageAccountName)
+                    backendAzureRmContainerName: $(containerName)
+                    backendAzureRmKey: 'networking.tfstate'
+
+                - task: TerraformTaskV4@4
+                  displayName: 'Terraform Apply'
+                  inputs:
+                    provider: 'azurerm'
+                    command: 'apply'
+                    workingDirectory: '$(System.DefaultWorkingDirectory)/03-landing-zone/terraform/networking'
+                    environmentServiceNameAzureRM: $(azureServiceConnection)
+                    commandOptions: '$(System.DefaultWorkingDirectory)/tfplan/tfplan'

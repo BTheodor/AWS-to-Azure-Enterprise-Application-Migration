@@ -1,0 +1,88 @@
+# Application Deployment Pipeline (.NET Backend)
+# This pipeline builds and deploys the .NET Web API to Azure App Service.
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - src/Backend/* # Assuming source code would live here
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  solution: '**/*.sln'
+  buildConfiguration: 'Release'
+  azureSubscription: 'sc-azure-migration-prod'
+  webAppName: 'app-global-finance-be-001'
+
+stages:
+  - stage: Build
+    jobs:
+      - job: BuildJob
+        steps:
+          - task: NuGetToolInstaller@1
+
+          - task: NuGetCommand@2
+            inputs:
+              restoreSolution: '$(solution)'
+
+          - task: VSBuild@1
+            inputs:
+              solution: '$(solution)'
+              msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:DesktopBuildPackageLocation="$(build.artifactStagingDirectory)\WebApp.zip"'
+              platform: 'Any CPU'
+              configuration: '$(buildConfiguration)'
+
+          - task: VSTest@2
+            inputs:
+              platform: 'Any CPU'
+              configuration: '$(buildConfiguration)'
+
+          - task: PublishBuildArtifact@1
+            inputs:
+              PathtoPublish: '$(build.artifactStagingDirectory)'
+              ArtifactName: 'drop'
+              publishLocation: 'Container'
+
+  - stage: Deploy_to_Staging
+    dependsOn: Build
+    jobs:
+      - deployment: DeployStaging
+        environment: 'Staging'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureRmWebAppDeployment@4
+                  inputs:
+                    ConnectionType: 'AzureRM'
+                    azureSubscription: '$(azureSubscription)'
+                    appType: 'webApp'
+                    WebAppName: '$(webAppName)'
+                    deployToSlotOrASE: true
+                    ResourceGroupName: 'rg-global-finance-prod-app-001'
+                    SlotName: 'staging'
+                    Package: '$(Pipeline.Workspace)/drop/WebApp.zip'
+
+  - stage: Deploy_to_Production
+    dependsOn: Deploy_to_Staging
+    condition: succeeded()
+    jobs:
+      - deployment: DeployProd
+        environment: 'Production' # Requires Manual Approval
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureAppServiceManage@0
+                  displayName: 'Swap Slots'
+                  inputs:
+                    azureSubscription: '$(azureSubscription)'
+                    Action: 'Swap Slots'
+                    WebAppName: '$(webAppName)'
+                    ResourceGroupName: 'rg-global-finance-prod-app-001'
+                    SourceSlot: 'staging'
+                    # Swap with production is implicit if no target slot provided
